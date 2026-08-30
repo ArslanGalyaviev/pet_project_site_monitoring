@@ -1,11 +1,11 @@
 import asyncio
 import httpx
 import logging
-from .models import Site
 from .config import headers
+from .models import Site
 
 
-async def check_site(client, site):
+async def check_site(client, site, session):
     while True:
         try:
             response = await client.get(site.url, timeout=site.timeout)
@@ -18,20 +18,28 @@ async def check_site(client, site):
                     site.record_success()
                 case 4:
                     logging.error(f"{site.url} - Ошибка клиента")
-                    site.record_failure()
+                    if site.record_failure():
+                        session.add(site)
+                        await session.commit()
                 case 5:
                     logging.error(f"{site.url} - Ошибка сайта")
-                    site.record_failure()
+                    if site.record_failure():
+                        session.add(site)
+                        await session.commit()
                 case _:
                     logging.error(f"{site.url} - Неизвестная ошибка")
-                    site.record_failure()
+                    if site.record_failure():
+                        session.add(site)
+                        await session.commit()
         except Exception as e:
             logging.critical(f"Произошла ошибка {e} при запросе к {site.url}")
-            site.record_failure()
+            if site.record_failure():
+                session.add(site)
+                await session.commit()
         await asyncio.sleep(site.check_interval)
 
 
-async def check_sites(sites):
+async def check_sites(sites, session):
     async with httpx.AsyncClient(headers=headers) as client:
-        tasks = [check_site(client, site) for site in sites.values()]
+        tasks = [check_site(client, site, session) for site in sites.values()]
         await asyncio.gather(*tasks)

@@ -1,20 +1,13 @@
 import logging
+from sqlmodel import SQLModel, Field
 
 
-class Site:
-    def __init__(
-        self,
-        url,
-        timeout=5.0,
-        check_interval=60,
-        consecutive_errors=0,
-        alert_sent=False,
-    ):
-        self.url = url
-        self.timeout = timeout
-        self.check_interval = check_interval
-        self.consecutive_errors = consecutive_errors
-        self.alert_sent = alert_sent
+class Site(SQLModel, table=True):
+    url: str = Field(default=None, primary_key=True)
+    timeout: float = Field(default=5)
+    check_interval: int = Field(default=10)
+    consecutive_errors: int = Field(default=0)
+    alert_sent: bool = Field(default=False)
 
     def record_success(self):
         self.consecutive_errors = 0
@@ -25,3 +18,5 @@ class Site:
         if self.consecutive_errors >= 5 and not self.alert_sent:
             logging.critical(f"Сайт {self.url} долго не работает")
             self.alert_sent = True
+            return True
+        return False
