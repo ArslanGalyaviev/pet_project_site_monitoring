@@ -19,6 +19,7 @@
 - pytest + pytest-asyncio (тестирование)
 
 ## Архитектура
+```
 pet_project_site_monitoring/
 ├── app/
 │   ├── __init__.py
@@ -34,7 +35,7 @@ pet_project_site_monitoring/
 ├── main.py                # Точка входа в приложение
 ├── pytest.ini             # Конфигурация pytest для асинхронных тестов
 └── requirements.txt       # Зависимости проекта
-
+```
 ## Тестирование 
 pytest -v
 
