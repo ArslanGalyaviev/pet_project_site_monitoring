@@ -3,12 +3,15 @@ import httpx
 import logging
 from .config import headers
 from .models import Site
+from .notifier import send_alert_email
 
 
 async def check_site(client, site, session):
     while True:
         try:
             response = await client.get(site.url, timeout=site.timeout)
+            is_failure = False
+            error_msg = ""
             match response.status_code // 100:
                 case 2:
                     logging.info(f"{site.url} - Сайт доступен")
@@ -17,25 +20,28 @@ async def check_site(client, site, session):
                     logging.warning(f"{site.url} - Переадресация")
                     site.record_success()
                 case 4:
-                    logging.error(f"{site.url} - Ошибка клиента")
-                    if site.record_failure():
-                        session.add(site)
-                        await session.commit()
+                    is_failure = True
+                    error_msg = f"Ошибка клиента (статус {response.status_code})"
                 case 5:
-                    logging.error(f"{site.url} - Ошибка сайта")
-                    if site.record_failure():
-                        session.add(site)
-                        await session.commit()
+                    is_failure = True
+                    error_msg = f"Ошибка сервера (статус {response.status_code})"
                 case _:
-                    logging.error(f"{site.url} - Неизвестная ошибка")
-                    if site.record_failure():
-                        session.add(site)
-                        await session.commit()
+                    is_failure = True
+                    error_msg = f"Неизвестный статус {response.status_code}"
+            if is_failure:
+                logging.error(f"{site.url} - {error_msg}")
+                if site.record_failure():
+                    session.add(site)
+                    await session.commit()
+                    await send_alert_email(site.url, error_msg)
         except Exception as e:
-            logging.critical(f"Произошла ошибка {e} при запросе к {site.url}")
+            error_msg = str(e)
+            logging.critical(f"Произошла ошибка {error_msg} при запросе к {site.url}")
             if site.record_failure():
                 session.add(site)
                 await session.commit()
+                await send_alert_email(site.url, error_msg)
+
         await asyncio.sleep(site.check_interval)
 
 
