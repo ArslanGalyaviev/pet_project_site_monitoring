@@ -1,12 +1,15 @@
 import asyncio
 import httpx
 import logging
+from sqlmodel.ext.asyncio.session import AsyncSession
 from .config import headers
 from .models import Site
 from .notifier import send_alert_email
 
 
-async def check_site(client, site, session):
+async def check_site(
+    client: httpx.AsyncClient, site: Site, session: AsyncSession
+) -> None:
     while True:
         try:
             response = await client.get(site.url, timeout=site.timeout)
@@ -45,7 +48,7 @@ async def check_site(client, site, session):
         await asyncio.sleep(site.check_interval)
 
 
-async def check_sites(sites, session):
+async def check_sites(sites: dict[str, Site], session: AsyncSession):
     async with httpx.AsyncClient(headers=headers) as client:
         tasks = [check_site(client, site, session) for site in sites.values()]
         await asyncio.gather(*tasks)

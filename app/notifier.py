@@ -4,7 +4,7 @@ from email.message import EmailMessage
 from .config import SMTP_HOST, SMTP_PORT, SMTP_LOGIN, SMTP_PASSWORD, ALERT_RECIPIENT
 
 
-async def send_alert_email(site_url, error_details):
+async def send_alert_email(site_url: str, error_details: str) -> None:
     msg = EmailMessage()
     msg["Subject"] = f"АЛЕРТ: Сайт {site_url} не работает!"
     msg["From"] = SMTP_LOGIN

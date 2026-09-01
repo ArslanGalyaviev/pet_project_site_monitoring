@@ -8,7 +8,7 @@ from sqlmodel import select
 from sqlalchemy.ext.asyncio import create_async_engine
 
 
-async def main():
+async def main() -> None:
     engine = create_async_engine(DATABASE_URL, echo=True)
     await init_db(engine)
     urls = [

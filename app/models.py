@@ -9,11 +9,11 @@ class Site(SQLModel, table=True):
     consecutive_errors: int = Field(default=0)
     alert_sent: bool = Field(default=False)
 
-    def record_success(self):
+    def record_success(self) -> None:
         self.consecutive_errors = 0
         self.alert_sent = False
 
-    def record_failure(self):
+    def record_failure(self) -> bool:
         self.consecutive_errors += 1
         if self.consecutive_errors >= 5 and not self.alert_sent:
             logging.critical(f"Сайт {self.url} долго не работает")
